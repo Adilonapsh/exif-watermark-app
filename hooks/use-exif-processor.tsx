@@ -60,7 +60,7 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
 
       setProcessingStep("Membuat watermark...");
 
-      console.log(imagePreview)
+      console.log(imagePreview);
 
       // Create watermarked image
       const watermarkedImage = await createWatermarkedImage(imagePreview, exif);
@@ -358,7 +358,7 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
           addressParts.push(components.country);
         }
 
-        const formattedAddress = 
+        const formattedAddress =
           addressParts.length > 0 ? addressParts.join("\n") : data.display_name;
 
         return {
@@ -520,62 +520,52 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
     const mapX = padding;
     const mapY = height - mapSize - padding;
 
-    // Create Leaflet-style map with OpenLayers basemap appearance
-    ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-    ctx.fillRect(mapX, mapY, mapSize, mapSize);
+    const mapImage = new Image();
+    mapImage.crossOrigin = "anonymous";
 
-    // Add border to map
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(mapX, mapY, mapSize, mapSize);
+    await new Promise((resolve, reject) => {
+      mapImage.onload = () => {
+        // Draw map image maintaining aspect ratio
+        const aspectRatio = mapImage.width / mapImage.height;
+        const drawWidth = mapSize;
+        const drawHeight = mapSize;
 
-    // Add OpenStreetMap-style grid (more detailed for larger map)
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.1)";
-    ctx.lineWidth = 1;
-    const gridLines = 8; // More grid lines for larger map
-    for (let i = 1; i < gridLines; i++) {
-      const gridX = mapX + (mapSize / gridLines) * i;
-      const gridY = mapY + (mapSize / gridLines) * i;
+        ctx.fillStyle = "white";
+        ctx.fillRect(mapX, mapY, mapSize, mapSize);
 
-      ctx.beginPath();
-      ctx.moveTo(gridX, mapY);
-      ctx.lineTo(gridX, mapY + mapSize);
-      ctx.stroke();
+        ctx.drawImage(mapImage, mapX, mapY, drawWidth, drawHeight);
 
-      ctx.beginPath();
-      ctx.moveTo(mapX, gridY);
-      ctx.lineTo(mapX + mapSize, gridY);
-      ctx.stroke();
-    }
+        // Add border to map
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+        ctx.lineWidth = 5;
+        ctx.strokeRect(mapX, mapY, mapSize, mapSize);
 
-    // Add location marker in center (larger for bigger map)
-    const centerX = mapX + mapSize / 2;
-    const centerY = mapY + mapSize / 2;
-    const markerSize = mapSize * 0.08; // Scale marker with map size
+        // Add location marker in center
+        const centerX = mapX + mapSize / 2;
+        const centerY = mapY + mapSize / 2;
+        const markerSize = mapSize * 0.08;
 
-    // Draw location pin (larger)
-    ctx.fillStyle = "#ef4444";
-    ctx.beginPath();
-    ctx.arc(centerX, centerY - markerSize, markerSize, 0, Math.PI * 2);
-    ctx.fill();
+        // Draw outer circle
+        ctx.fillStyle = "#ef4444";
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, markerSize * 0.5, 0, Math.PI * 2);
+        ctx.fill();
 
-    // Draw pin point
-    ctx.fillStyle = "#dc2626";
-    ctx.beginPath();
-    ctx.moveTo(centerX, centerY - markerSize);
-    ctx.lineTo(centerX - markerSize * 0.7, centerY + markerSize);
-    ctx.lineTo(centerX + markerSize * 0.7, centerY + markerSize);
-    ctx.closePath();
-    ctx.fill();
+        // Draw inner circle
+        ctx.fillStyle = "#dc2626";
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, markerSize * 0.2, 0, Math.PI * 2);
+        ctx.fill();
 
-    // Add "MAP" label (scaled for larger map)
-    const labelWidth = mapSize * 0.15;
-    const labelHeight = mapSize * 0.08;
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.fillRect(mapX, mapY, labelWidth, labelHeight);
-    ctx.fillStyle = "white";
-    ctx.font = `bold ${fontSize * 0.8}px Arial`;
-    ctx.fillText("MAP", mapX + 8, mapY + labelHeight * 0.7);
+        resolve(true);
+      };
+
+      mapImage.onerror = () => {
+        reject(new Error("Failed to load map image"));
+      };
+
+      mapImage.src = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${exif.coordinates.lng ?? 0},${exif.coordinates.lat ?? 0},15,0,0/600x400?access_token=pk.eyJ1IjoiYWRpbG9uYXBzaCIsImEiOiJja3g1anppcjUyY3d0Mm5wMnA5bW15N3h3In0.7VIkHFr2up0hLZpI3XOYvQ`;
+    });
 
     // Reset shadow
     ctx.shadowColor = "transparent";
