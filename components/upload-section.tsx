@@ -2,13 +2,24 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Upload, ImageIcon, Camera, MapPin, Navigation, Plus, Loader2, CheckCircle, X } from "lucide-react"
+
+import { Feature, Map, View } from 'ol';
+import TileLayer from 'ol/layer/Tile';
+import OSM from 'ol/source/OSM';
+import { fromLonLat, toLonLat } from 'ol/proj';
+import 'ol/ol.css';
+import VectorLayer from "ol/layer/Vector"
+import VectorSource from "ol/source/Vector"
+import { Point } from "ol/geom"
+import Style from "ol/style/Style"
+import Icon from "ol/style/Icon"
 
 interface UploadSectionProps {
   selectedImages: File[]
@@ -32,6 +43,80 @@ export function UploadSection({
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [isGettingLocation, setIsGettingLocation] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const mapRef = useRef<Map | null>(null);
+  const mapElement = useRef<HTMLDivElement>(null);
+  const vectorSourceRef = useRef<VectorSource>(new VectorSource());
+
+  useEffect(() => {
+    if (!showLocationInput) return;
+    if (!mapElement.current) return;
+    if (mapRef.current) return;
+
+    const baseLayer = new TileLayer({
+      source: new OSM(),
+    });
+
+    // Buat layer untuk marker
+    const markerLayer = new VectorLayer({
+      source: vectorSourceRef.current,
+    });
+
+    // Inisialisasi map
+    const map = new Map({
+      target: mapElement.current,
+      layers: [baseLayer, markerLayer],
+      view: new View({
+        center: fromLonLat([106.83330170527103, -6.49479442693621]),
+        zoom: 17,
+      }),
+    });
+
+    map.on("click", (evt) => {
+      const [lon, lat] = toLonLat(evt.coordinate);
+      setCurrentLocation({ lat, lng: lon });
+
+      // Clear marker sebelumnya
+      vectorSourceRef.current.clear();
+
+      // Tambah marker baru
+      const marker = new Feature({
+        geometry: new Point(evt.coordinate),
+      });
+
+      marker.setStyle(
+        new Style({
+          image: new Icon({
+            src: "https://cdn-icons-png.flaticon.com/512/684/684908.png", // icon marker
+            scale: 0.05,
+            anchor: [0.5, 1],
+          }),
+        })
+      );
+
+      vectorSourceRef.current.addFeature(marker);
+    });
+
+    mapRef.current = map;
+
+    // ensure proper sizing after container becomes visible
+    setTimeout(() => map.updateSize(), 0);
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.setTarget(undefined);
+        mapRef.current = null;
+      }
+    };
+  }, [showLocationInput, selectedImages]);
+
+  // Update size whenever the location input is toggled visible
+  useEffect(() => {
+    if (showLocationInput && mapRef.current) {
+      mapRef.current.updateSize();
+    }
+  }, [showLocationInput]);
+
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || [])
@@ -93,11 +178,10 @@ export function UploadSection({
       </CardHeader>
       <CardContent className="space-y-6">
         <div
-          className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 cursor-pointer ${
-            selectedImages.length > 0
-              ? "border-green-300 bg-green-50/50"
-              : "border-gray-300 hover:border-blue-400 hover:bg-blue-50/50"
-          }`}
+          className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 cursor-pointer ${selectedImages.length > 0
+            ? "border-green-300 bg-green-50/50"
+            : "border-gray-300 hover:border-blue-400 hover:bg-blue-50/50"
+            }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onClick={() => fileInputRef.current?.click()}
@@ -210,6 +294,51 @@ export function UploadSection({
                     onChange={(e) => setManualLocation(e.target.value)}
                     className="bg-white"
                   />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    <div>
+                      <Label htmlFor="latitude" className="text-sm font-medium">
+                        Latitude
+                      </Label>
+                      <Input
+                        id="latitude"
+                        type="number"
+                        step="any"
+                        placeholder="-6.175392"
+                        value={currentLocation?.lat ?? ""}
+                        onChange={(e) => {
+                          const lat = e.target.value === "" ? null : parseFloat(e.target.value)
+                          setCurrentLocation((prev) => ({
+                            lat: lat ?? 0,
+                            lng: prev?.lng ?? 0,
+                          }))
+                        }}
+                        className="bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="longitude" className="text-sm font-medium">
+                        Longitude
+                      </Label>
+                      <Input
+                        id="longitude"
+                        type="number"
+                        step="any"
+                        placeholder="106.827153"
+                        value={currentLocation?.lng ?? ""}
+                        onChange={(e) => {
+                          const lng = e.target.value === "" ? null : parseFloat(e.target.value)
+                          setCurrentLocation((prev) => ({
+                            lat: prev?.lat ?? 0,
+                            lng: lng ?? 0,
+                          }))
+                        }}
+                        className="bg-white"
+                      />
+                    </div>
+
+                  </div>
+                  <div ref={mapElement} style={{ width: "100%", height: "40vh" }} />
+
                 </div>
               )}
 

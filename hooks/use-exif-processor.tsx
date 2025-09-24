@@ -54,13 +54,12 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
           currentLocation.lat,
           currentLocation.lng
         );
-        exif.location = locationData;
+        // exif.location = locationData;
+        exif.location = "Jalan Cikempong\nPakansari\nKecamatan Cibinong\nKabupaten Bogor\nJawa Barat";
         exif.coordinates = currentLocation;
       }
 
       setProcessingStep("Membuat watermark...");
-
-      console.log(imagePreview);
 
       // Create watermarked image
       const watermarkedImage = await createWatermarkedImage(imagePreview, exif);
@@ -447,13 +446,12 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
     // Location info - use fallback if not available
     let locationAddress = exif.location.address;
     if (!locationAddress || locationAddress === "Lokasi tidak tersedia") {
-      const location = await formatLocation(
-        exif.coordinates.lat,
-        exif.coordinates.lng
-      );
+      // const location = await formatLocation(
+      //   exif.coordinates.lat,
+      //   exif.coordinates.lng
+      // );
       locationAddress =
-        location.address ??
-        "6 Jalan Cikempong\nPakansari\nKecamatan Cibinong\nKabupaten Bogor\nJawa Barat";
+        "Jalan Cikempong\nPakansari\nKecamatan Cibinong\nKabupaten Bogor\nJawa Barat";
     }
 
     const locationLines = locationAddress.split("\n");
@@ -535,10 +533,10 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
 
         ctx.drawImage(mapImage, mapX, mapY, drawWidth, drawHeight);
 
-        // Add border to map
-        ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
-        ctx.lineWidth = 5;
-        ctx.strokeRect(mapX, mapY, mapSize, mapSize);
+        // // Add border to map
+        // ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+        // ctx.lineWidth = 5;
+        // ctx.strokeRect(mapX, mapY, mapSize, mapSize);
 
         // Add location marker in center
         const centerX = mapX + mapSize / 2;
