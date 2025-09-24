@@ -50,10 +50,10 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
         (!exif.coordinates.lat || !exif.coordinates.lng)
       ) {
         setProcessingStep("Memproses lokasi saat ini...");
-        const locationData = await formatLocation(
-          currentLocation.lat,
-          currentLocation.lng
-        );
+        // const locationData = await formatLocation(
+        //   currentLocation.lat,
+        //   currentLocation.lng
+        // );
         // exif.location = locationData;
         exif.location = "Jalan Cikempong\nPakansari\nKecamatan Cibinong\nKabupaten Bogor\nJawa Barat";
         exif.coordinates = currentLocation;
