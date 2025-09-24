@@ -19,12 +19,29 @@ export function ExifWatermarkApp() {
     setProcessedImages([])
   }
 
-  const handleProcessImages = async (manualLocation?: string, currentLocation?: { lat: number; lng: number }) => {
+  const handleProcessImages = async (
+    manualLocation?: string,
+    currentLocation?: { lat: number; lng: number },
+    manualDateTimeIso?: string,
+    dateOptions?: {
+      showHours?: boolean
+      showMinutes?: boolean
+      showSeconds?: boolean
+      randomizeSeconds?: boolean
+    }
+  ) => {
     const results = []
 
     for (const file of selectedImages) {
       const imagePreview = await createImagePreview(file)
-      const result = await processImage(file, imagePreview, manualLocation, currentLocation)
+      const result = await processImage(
+        file,
+        imagePreview,
+        manualLocation,
+        currentLocation,
+        manualDateTimeIso,
+        dateOptions
+      )
       if (result) {
         results.push({
           original: file,

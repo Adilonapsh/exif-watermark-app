@@ -24,7 +24,17 @@ import Icon from "ol/style/Icon"
 interface UploadSectionProps {
   selectedImages: File[]
   onFilesSelect: (files: File[]) => void
-  onProcessImages: (manualLocation?: string, currentLocation?: { lat: number; lng: number }) => void
+  onProcessImages: (
+    manualLocation?: string,
+    currentLocation?: { lat: number; lng: number },
+    manualDateTimeIso?: string,
+    dateOptions?: {
+      showHours?: boolean
+      showMinutes?: boolean
+      showSeconds?: boolean
+      randomizeSeconds?: boolean
+    }
+  ) => void
   isProcessing: boolean
   processingStep: string
   onReset: () => void
@@ -42,6 +52,11 @@ export function UploadSection({
   const [manualLocation, setManualLocation] = useState("")
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [isGettingLocation, setIsGettingLocation] = useState(false)
+  const [manualDateTimeIso, setManualDateTimeIso] = useState<string>("")
+  const [showHours, setShowHours] = useState<boolean>(true)
+  const [showMinutes, setShowMinutes] = useState<boolean>(true)
+  const [showSeconds, setShowSeconds] = useState<boolean>(true)
+  const [randomizeSeconds, setRandomizeSeconds] = useState<boolean>(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const mapRef = useRef<Map | null>(null);
@@ -160,7 +175,17 @@ export function UploadSection({
   }
 
   const handleProcess = () => {
-    onProcessImages(manualLocation.trim() || undefined, currentLocation || undefined)
+    onProcessImages(
+      manualLocation.trim() || undefined,
+      currentLocation || undefined,
+      manualDateTimeIso || undefined,
+      {
+        showHours,
+        showMinutes,
+        showSeconds,
+        randomizeSeconds,
+      }
+    )
   }
 
   return (
@@ -249,8 +274,67 @@ export function UploadSection({
           <div className="space-y-4">
             <Separator />
 
-            {/* Location Options */}
+            {/* Date/Time and Location Options */}
             <div className="space-y-4">
+              <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                <Camera className="w-4 h-4" />
+                Tanggal & Waktu
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="datetime" className="text-sm font-medium">
+                    Tanggal & Waktu (opsional)
+                  </Label>
+                  <Input
+                    id="datetime"
+                    type="datetime-local"
+                    value={manualDateTimeIso}
+                    onChange={(e) => setManualDateTimeIso(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="opt-hours"
+                    type="checkbox"
+                    checked={showHours}
+                    onChange={(e) => setShowHours(e.target.checked)}
+                  />
+                  <Label htmlFor="opt-hours" className="text-sm">Tampilkan jam</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="opt-minutes"
+                    type="checkbox"
+                    checked={showMinutes}
+                    onChange={(e) => setShowMinutes(e.target.checked)}
+                  />
+                  <Label htmlFor="opt-minutes" className="text-sm">Tampilkan menit</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="opt-seconds"
+                    type="checkbox"
+                    checked={showSeconds}
+                    onChange={(e) => setShowSeconds(e.target.checked)}
+                  />
+                  <Label htmlFor="opt-seconds" className="text-sm">Tampilkan detik</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="opt-randsec"
+                    type="checkbox"
+                    checked={randomizeSeconds}
+                    onChange={(e) => setRandomizeSeconds(e.target.checked)}
+                    disabled={!showSeconds}
+                  />
+                  <Label htmlFor="opt-randsec" className="text-sm">Acak detik</Label>
+                </div>
+              </div>
+
               <h4 className="font-semibold text-gray-700 flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
                 Opsi Lokasi

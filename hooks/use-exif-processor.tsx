@@ -28,7 +28,14 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
     file: File,
     imagePreview: string,
     manualLocation?: string,
-    currentLocation?: { lat: number; lng: number }
+    currentLocation?: { lat: number; lng: number },
+    manualDateTimeIso?: string,
+    dateOptions?: {
+      showHours?: boolean
+      showMinutes?: boolean
+      showSeconds?: boolean
+      randomizeSeconds?: boolean
+    }
   ) => {
     setIsProcessing(true);
     setProcessingStep(`Mengekstrak data EXIF dari ${file.name}...`);
@@ -57,6 +64,55 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
         // exif.location = locationData;
         exif.location = "Jalan Cikempong\nPakansari\nKecamatan Cibinong\nKabupaten Bogor\nJawa Barat";
         exif.coordinates = currentLocation;
+      }
+
+      // Override date/time if provided manually
+      if (manualDateTimeIso && manualDateTimeIso.trim()) {
+        const parsed = new Date(manualDateTimeIso);
+        if (!isNaN(parsed.getTime())) {
+          const secondsValue = (() => {
+            if (dateOptions?.showSeconds === false) return null;
+            if (dateOptions?.randomizeSeconds) return Math.floor(Math.random() * 60);
+            return parsed.getSeconds();
+          })();
+
+          const parts: string[] = [];
+          const timeParts: string[] = [];
+
+          parts.push(
+            parsed.toLocaleDateString("id-ID", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          );
+
+          const includeHours = dateOptions?.showHours !== false;
+          const includeMinutes = dateOptions?.showMinutes !== false;
+          const includeSeconds = dateOptions?.showSeconds !== false;
+
+          if (includeHours) {
+            timeParts.push(parsed.getHours().toString().padStart(2, "0"));
+          }
+          if (includeMinutes) {
+            const mm = parsed.getMinutes().toString().padStart(2, "0");
+            if (!includeHours) {
+              // If hours are hidden but minutes shown, still show minutes alone
+              timeParts.push(mm);
+            } else {
+              timeParts.push(mm);
+            }
+          }
+          if (includeSeconds && secondsValue !== null) {
+            timeParts.push(secondsValue.toString().padStart(2, "0"));
+          }
+
+          if (timeParts.length > 0) {
+            parts.push(timeParts.join(":"));
+          }
+
+          exif.dateTime = parts.join(", ");
+        }
       }
 
       setProcessingStep("Membuat watermark...");
