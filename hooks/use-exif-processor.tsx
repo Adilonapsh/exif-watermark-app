@@ -552,8 +552,8 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
     const textStartY = height - textHeight;
 
     // Draw text background
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.fillRect(textStartX, textStartY, textBackgroundWidth, textHeight);
+    // ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    // ctx.fillRect(textStartX, textStartY, textBackgroundWidth, textHeight);
 
     // Draw text
     ctx.fillStyle = "white";
