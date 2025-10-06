@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Upload, ImageIcon, Camera, MapPin, Navigation, Plus, Loader2, CheckCircle, X } from "lucide-react"
+import { Upload, ImageIcon, Camera, MapPin, Navigation, Plus, Loader2, CheckCircle, X, Palette } from "lucide-react"
 
 import { Feature, Map, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
@@ -33,6 +33,10 @@ interface UploadSectionProps {
       showMinutes?: boolean
       showSeconds?: boolean
       randomizeSeconds?: boolean
+    },
+    styleOptions?: {
+      showMap?: boolean
+      showTextBackground?: boolean
     }
   ) => void
   isProcessing: boolean
@@ -54,6 +58,8 @@ export function UploadSection({
   const [isGettingLocation, setIsGettingLocation] = useState(false)
   const [manualDateTimeIso, setManualDateTimeIso] = useState<string>("")
   const [showHours, setShowHours] = useState<boolean>(true)
+  const [showMap, setShowMap] = useState<boolean>(false)
+  const [showTextBackground, setShowTextBackground] = useState<boolean>(false)
   const [showMinutes, setShowMinutes] = useState<boolean>(true)
   const [showSeconds, setShowSeconds] = useState<boolean>(true)
   const [randomizeSeconds, setRandomizeSeconds] = useState<boolean>(false)
@@ -184,6 +190,10 @@ export function UploadSection({
         showMinutes,
         showSeconds,
         randomizeSeconds,
+      },
+      {
+        showMap,
+        showTextBackground,
       }
     )
   }
@@ -437,6 +447,31 @@ export function UploadSection({
                   </div>
                 </div>
               )}
+
+              <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                <Palette className="w-4 h-4" />
+                Style
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="opt-map"
+                    type="checkbox"
+                    checked={showMap}
+                    onChange={(e) => setShowMap(e.target.checked)}
+                  />
+                  <Label htmlFor="opt-map" className="text-sm">Tampilkan Peta</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="opt-text-bg"
+                    type="checkbox"
+                    checked={showTextBackground}
+                    onChange={(e) => setShowTextBackground(e.target.checked)}
+                  />
+                  <Label htmlFor="opt-text-bg" className="text-sm">Tampilkan Background Teks</Label>
+                </div>
+              </div>
             </div>
 
             <Separator />

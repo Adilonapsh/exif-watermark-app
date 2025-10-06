@@ -35,6 +35,10 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
       showMinutes?: boolean
       showSeconds?: boolean
       randomizeSeconds?: boolean
+    },
+    styleOptions?: {
+      showMap?: boolean
+      showTextBackground?: boolean
     }
   ) => {
     setIsProcessing(true);
@@ -43,6 +47,8 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
     try {
       // Extract EXIF data
       const exif = await extractExifData(file);
+
+      console.log("Style", styleOptions?.showMap);
 
       // Override location if manual location is provided
       if (manualLocation?.trim()) {
@@ -118,7 +124,10 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
       setProcessingStep("Membuat watermark...");
 
       // Create watermarked image
-      const watermarkedImage = await createWatermarkedImage(imagePreview, exif);
+      const watermarkedImage = await createWatermarkedImage(imagePreview, {
+        ...exif,
+        styleOptions
+      });
       setProcessingStep("Selesai!");
 
       return {
@@ -465,6 +474,9 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
     height: number,
     exif: any
   ) => {
+    console.log(exif)
+    const showMap = exif.styleOptions?.showMap !== undefined ? exif.styleOptions.showMap : false;
+    const showTextBackground = exif.styleOptions?.showTextBackground !== undefined ? exif.styleOptions.showTextBackground : false;
     const fontSize = Math.max(14, width * 0.015);
     const padding = 20;
     const lineHeight = fontSize * 1.3;
@@ -552,8 +564,10 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
     const textStartY = height - textHeight;
 
     // Draw text background
-    // ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    // ctx.fillRect(textStartX, textStartY, textBackgroundWidth, textHeight);
+    if (showTextBackground) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+      ctx.fillRect(textStartX, textStartY, textBackgroundWidth, textHeight);
+    }
 
     // Draw text
     ctx.fillStyle = "white";
@@ -577,49 +591,52 @@ export function useExifProcessor(canvasRef: RefObject<HTMLCanvasElement>) {
     const mapImage = new Image();
     mapImage.crossOrigin = "anonymous";
 
-    await new Promise((resolve, reject) => {
-      mapImage.onload = () => {
-        // Draw map image maintaining aspect ratio
-        const aspectRatio = mapImage.width / mapImage.height;
-        const drawWidth = mapSize;
-        const drawHeight = mapSize;
 
-        ctx.fillStyle = "white";
-        ctx.fillRect(mapX, mapY, mapSize, mapSize);
+    if (showMap) {
+      await new Promise((resolve, reject) => {
+        mapImage.onload = () => {
+          // Draw map image maintaining aspect ratio
+          const aspectRatio = mapImage.width / mapImage.height;
+          const drawWidth = mapSize;
+          const drawHeight = mapSize;
 
-        ctx.drawImage(mapImage, mapX, mapY, drawWidth, drawHeight);
+          ctx.fillStyle = "white";
+          ctx.fillRect(mapX, mapY, mapSize, mapSize);
 
-        // // Add border to map
-        // ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
-        // ctx.lineWidth = 5;
-        // ctx.strokeRect(mapX, mapY, mapSize, mapSize);
+          ctx.drawImage(mapImage, mapX, mapY, drawWidth, drawHeight);
 
-        // Add location marker in center
-        const centerX = mapX + mapSize / 2;
-        const centerY = mapY + mapSize / 2;
-        const markerSize = mapSize * 0.08;
+          // // Add border to map
+          // ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+          // ctx.lineWidth = 5;
+          // ctx.strokeRect(mapX, mapY, mapSize, mapSize);
 
-        // Draw outer circle
-        ctx.fillStyle = "#ef4444";
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, markerSize * 0.5, 0, Math.PI * 2);
-        ctx.fill();
+          // Add location marker in center
+          const centerX = mapX + mapSize / 2;
+          const centerY = mapY + mapSize / 2;
+          const markerSize = mapSize * 0.08;
 
-        // Draw inner circle
-        ctx.fillStyle = "#dc2626";
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, markerSize * 0.2, 0, Math.PI * 2);
-        ctx.fill();
+          // Draw outer circle
+          ctx.fillStyle = "#ef4444";
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, markerSize * 0.5, 0, Math.PI * 2);
+          ctx.fill();
 
-        resolve(true);
-      };
+          // Draw inner circle
+          ctx.fillStyle = "#dc2626";
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, markerSize * 0.2, 0, Math.PI * 2);
+          ctx.fill();
 
-      mapImage.onerror = () => {
-        reject(new Error("Failed to load map image"));
-      };
+          resolve(true);
+        };
 
-      mapImage.src = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${exif.coordinates.lng ?? 0},${exif.coordinates.lat ?? 0},15,0,0/600x400?access_token=pk.eyJ1IjoiYWRpbG9uYXBzaCIsImEiOiJja3g1anppcjUyY3d0Mm5wMnA5bW15N3h3In0.7VIkHFr2up0hLZpI3XOYvQ`;
-    });
+        mapImage.onerror = () => {
+          reject(new Error("Failed to load map image"));
+        };
+
+        mapImage.src = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${exif.coordinates.lng ?? 0},${exif.coordinates.lat ?? 0},15,0,0/600x400?access_token=pk.eyJ1IjoiYWRpbG9uYXBzaCIsImEiOiJja3g1anppcjUyY3d0Mm5wMnA5bW15N3h3In0.7VIkHFr2up0hLZpI3XOYvQ`;
+      });
+    }
 
     // Reset shadow
     ctx.shadowColor = "transparent";

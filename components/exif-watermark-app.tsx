@@ -28,6 +28,10 @@ export function ExifWatermarkApp() {
       showMinutes?: boolean
       showSeconds?: boolean
       randomizeSeconds?: boolean
+    },
+    styleOptions?: {
+      showMap?: boolean
+      showTextBackground?: boolean
     }
   ) => {
     const results = []
@@ -40,7 +44,8 @@ export function ExifWatermarkApp() {
         manualLocation,
         currentLocation,
         manualDateTimeIso,
-        dateOptions
+        dateOptions,
+        styleOptions
       )
       if (result) {
         results.push({
